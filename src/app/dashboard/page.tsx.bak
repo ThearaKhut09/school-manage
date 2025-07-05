@@ -1,0 +1,640 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  Users, 
+  GraduationCap, 
+  BookOpen, 
+  TrendingUp, 
+  Calendar, 
+  Bell,
+  Plus,
+  ArrowRight
+} from "lucide-react";
+
+interface DashboardStats {
+  totalStudents: number;
+  totalTeachers: number;
+  totalClasses: number;
+  totalSubjects: number;
+  attendanceRate: number;
+}
+
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  eventType: string;
+}
+
+interface Assignment {
+  id: string;
+  title: string;
+  dueDate: string;
+  subject: {
+    name: string;
+  };
+  class: {
+    name: string;
+    section: string;
+  };
+}
+
+interface DashboardData {
+  stats: DashboardStats;
+  upcomingAssignments: Assignment[];
+  announcements: Event[];
+}
+
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      redirect("/auth/signin");
+    }
+  }, [status]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('/api/dashboard');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        setError('Failed to load dashboard data');
+        console.error('Dashboard error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session) {
+      fetchDashboardData();
+    }
+  }, [session]);
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session || !dashboardData) {
+    return null;
+  }
+
+  const { stats, upcomingAssignments, announcements } = dashboardData;
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back, {session.user.name}!</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm">
+            <Calendar className="h-4 w-4 mr-2" />
+            View Calendar
+          </Button>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Quick Actions
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalStudents}</div>
+            <p className="text-xs text-muted-foreground">Active enrollments</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalTeachers}</div>
+            <p className="text-xs text-muted-foreground">Faculty members</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalClasses}</div>
+            <p className="text-xs text-muted-foreground">Active classes</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSubjects}</div>
+            <p className="text-xs text-muted-foreground">Curriculum subjects</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Attendance Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.attendanceRate}%</div>
+            <p className="text-xs text-muted-foreground">Last 30 days</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Upcoming Assignments */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2" />
+              Upcoming Assignments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingAssignments.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No upcoming assignments</p>
+            ) : (
+              <div className="space-y-4">
+                {upcomingAssignments.map((assignment) => (
+                  <div key={assignment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{assignment.title}</h4>
+                      <p className="text-sm text-gray-600">
+                        {assignment.subject.name} - {assignment.class.name} {assignment.class.section}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                      </p>
+                      <Badge variant="outline" className="mt-1">
+                        Pending
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Announcements */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bell className="h-5 w-5 mr-2" />
+              Recent Events
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {announcements.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No recent events</p>
+            ) : (
+              <div className="space-y-4">
+                {announcements.map((event) => (
+                  <div key={event.id} className="p-3 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900">{event.title}</h4>
+                    <p className="text-sm text-blue-700 mt-1">{event.description}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {event.eventType}
+                      </Badge>
+                      <span className="text-xs text-blue-600">
+                        {new Date(event.startDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button variant="outline" className="justify-start h-auto p-4">
+              <div className="flex items-center space-x-3">
+                <Users className="h-5 w-5 text-blue-600" />
+                <div className="text-left">
+                  <p className="font-medium">Manage Students</p>
+                  <p className="text-sm text-gray-600">Add, edit, or view student records</p>
+                </div>
+                <ArrowRight className="h-4 w-4 ml-auto" />
+              </div>
+            </Button>
+            
+            <Button variant="outline" className="justify-start h-auto p-4">
+              <div className="flex items-center space-x-3">
+                <Calendar className="h-5 w-5 text-green-600" />
+                <div className="text-left">
+                  <p className="font-medium">Timetable</p>
+                  <p className="text-sm text-gray-600">View and manage class schedules</p>
+                </div>
+                <ArrowRight className="h-4 w-4 ml-auto" />
+              </div>
+            </Button>
+            
+            <Button variant="outline" className="justify-start h-auto p-4">
+              <div className="flex items-center space-x-3">
+                <BookOpen className="h-5 w-5 text-purple-600" />
+                <div className="text-left">
+                  <p className="font-medium">Assignments</p>
+                  <p className="text-sm text-gray-600">Create and manage assignments</p>
+                </div>
+                <ArrowRight className="h-4 w-4 ml-auto" />
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const stats = [
+  {
+    title: 'Total Students',
+    value: '2,847',
+    change: '+12%',
+    trend: 'up',
+    icon: Users,
+    color: 'blue',
+  },
+  {
+    title: 'Total Teachers',
+    value: '124',
+    change: '+3%',
+    trend: 'up',
+    icon: GraduationCap,
+    color: 'green',
+  },
+  {
+    title: 'Active Classes',
+    value: '85',
+    change: '+5%',
+    trend: 'up',
+    icon: BookOpen,
+    color: 'purple',
+  },
+  {
+    title: 'Monthly Revenue',
+    value: '$125,450',
+    change: '+8%',
+    trend: 'up',
+    icon: DollarSign,
+    color: 'orange',
+  },
+]
+
+const todaysSchedule = [
+  {
+    time: '9:00 AM',
+    event: 'Morning Assembly',
+    location: 'Main Hall',
+    type: 'assembly',
+  },
+  {
+    time: '10:30 AM',
+    event: 'Parent-Teacher Meeting',
+    location: 'Conference Room',
+    type: 'meeting',
+  },
+  {
+    time: '2:00 PM',
+    event: 'Science Fair Setup',
+    location: 'Laboratory',
+    type: 'event',
+  },
+  {
+    time: '4:00 PM',
+    event: 'Sports Practice',
+    location: 'Playground',
+    type: 'activity',
+  },
+]
+
+const recentActivities = [
+  {
+    id: 1,
+    action: 'New student admission',
+    user: 'Sarah Johnson',
+    time: '2 hours ago',
+    type: 'admission',
+  },
+  {
+    id: 2,
+    action: 'Fee payment received',
+    user: 'Class 10-A',
+    time: '4 hours ago',
+    type: 'payment',
+  },
+  {
+    id: 3,
+    action: 'Assignment submitted',
+    user: 'Mathematics - Grade 9',
+    time: '6 hours ago',
+    type: 'assignment',
+  },
+  {
+    id: 4,
+    action: 'Teacher attendance marked',
+    user: 'John Smith',
+    time: '8 hours ago',
+    type: 'attendance',
+  },
+]
+
+const alerts = [
+  {
+    id: 1,
+    message: 'Low attendance in Class 8-B (62%)',
+    type: 'warning',
+    time: '1 hour ago',
+  },
+  {
+    id: 2,
+    message: 'Upcoming exam: Mathematics - Grade 10',
+    type: 'info',
+    time: '2 hours ago',
+  },
+  {
+    id: 3,
+    message: 'Fee payment overdue: 15 students',
+    type: 'error',
+    time: '3 hours ago',
+  },
+  {
+    id: 4,
+    message: 'New assignment graded: Science - Grade 9',
+    type: 'success',
+    time: '5 hours ago',
+  },
+]
+
+export default function DashboardPage() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here&apos;s what&apos;s happening at your school.</p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" size="sm">
+            <Calendar className="w-4 h-4 mr-2" />
+            Today's Schedule
+          </Button>
+          <Button size="sm">
+            <Bell className="w-4 h-4 mr-2" />
+            View All Alerts
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                {stat.title}
+              </CardTitle>
+              <div className={`p-2 rounded-full bg-${stat.color}-100`}>
+                <stat.icon className={`w-4 h-4 text-${stat.color}-600`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="flex items-center text-sm">
+                {stat.trend === 'up' ? (
+                  <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                ) : (
+                  <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                )}
+                <span className={`${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                  {stat.change}
+                </span>
+                <span className="text-gray-500 ml-1">from last month</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's Schedule */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Clock className="w-5 h-5 mr-2" />
+              Today&apos;s Schedule
+            </CardTitle>
+            <CardDescription>
+              Your upcoming events and activities
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {todaysSchedule.map((item, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <div className="flex-shrink-0 w-16 text-sm font-medium text-gray-600">
+                    {item.time}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{item.event}</div>
+                    <div className="text-sm text-gray-500">{item.location}</div>
+                  </div>
+                  <Badge variant={
+                    item.type === 'assembly' ? 'default' :
+                    item.type === 'meeting' ? 'secondary' :
+                    item.type === 'event' ? 'outline' : 'default'
+                  }>
+                    {item.type}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="w-full mt-4">
+              View Full Schedule
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activities */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <UserCheck className="w-5 h-5 mr-2" />
+              Recent Activities
+            </CardTitle>
+            <CardDescription>
+              Latest updates and actions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      {activity.action}
+                    </div>
+                    <div className="text-sm text-gray-500">{activity.user}</div>
+                    <div className="text-xs text-gray-400">{activity.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="w-full mt-4">
+              View All Activities
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Alerts & Notifications */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bell className="w-5 h-5 mr-2" />
+              Alerts & Notifications
+            </CardTitle>
+            <CardDescription>
+              Important updates that need attention
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {alerts.map((alert) => (
+                <div key={alert.id} className="flex items-start space-x-3 p-3 rounded-lg border">
+                  <div className="flex-shrink-0 mt-0.5">
+                    {alert.type === 'warning' && (
+                      <AlertCircle className="w-4 h-4 text-yellow-500" />
+                    )}
+                    {alert.type === 'error' && (
+                      <XCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    {alert.type === 'success' && (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    )}
+                    {alert.type === 'info' && (
+                      <AlertCircle className="w-4 h-4 text-blue-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      {alert.message}
+                    </div>
+                    <div className="text-xs text-gray-400">{alert.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="w-full mt-4">
+              View All Alerts
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Award className="w-5 h-5 mr-2" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>
+            Frequently used actions for quick access
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <Button variant="outline" className="h-20 flex-col">
+              <Users className="w-6 h-6 mb-2" />
+              <span className="text-sm">Add Student</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col">
+              <GraduationCap className="w-6 h-6 mb-2" />
+              <span className="text-sm">Add Teacher</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col">
+              <BookOpen className="w-6 h-6 mb-2" />
+              <span className="text-sm">Create Class</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col">
+              <Calendar className="w-6 h-6 mb-2" />
+              <span className="text-sm">Schedule Exam</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col">
+              <DollarSign className="w-6 h-6 mb-2" />
+              <span className="text-sm">Fee Collection</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col">
+              <Bell className="w-6 h-6 mb-2" />
+              <span className="text-sm">Send Notice</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
