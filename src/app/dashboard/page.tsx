@@ -48,8 +48,8 @@ interface Assignment {
 
 interface DashboardData {
   stats: DashboardStats;
-  upcomingAssignments: Assignment[];
-  announcements: Event[];
+  upcomingAssignments?: Assignment[];
+  announcements?: Event[];
 }
 
 export default function DashboardPage() {
@@ -111,7 +111,7 @@ export default function DashboardPage() {
     return null;
   }
 
-  const { stats, upcomingAssignments, announcements } = dashboardData;
+  const { stats, upcomingAssignments = [], announcements = [] } = dashboardData;
 
   return (
     <div className="p-6 space-y-6">
