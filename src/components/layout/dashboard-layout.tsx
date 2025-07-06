@@ -36,6 +36,7 @@ import {
   ChevronDown,
   User,
   LogOut,
+  Bed,
 } from 'lucide-react'
 
 interface MenuItem {
@@ -111,7 +112,27 @@ const menuItems: MenuItem[] = [
     submenu: [
       { title: 'Announcements', href: '/communications/announcements', icon: Bell },
       { title: 'Messages', href: '/communications/messages', icon: Phone },
-      { title: 'Events', href: '/communications/events', icon: Calendar },
+      { title: 'Events', href: '/events', icon: Calendar },
+    ],
+  },
+  {
+    title: 'Library',
+    href: '/library',
+    icon: BookOpen,
+    submenu: [
+      { title: 'Books', href: '/library', icon: BookOpen },
+      { title: 'Issues & Returns', href: '/library/issues', icon: UserCheck },
+      { title: 'Members', href: '/library/members', icon: Users },
+    ],
+  },
+  {
+    title: 'Hostel',
+    href: '/hostel',
+    icon: Home,
+    submenu: [
+      { title: 'Hostels', href: '/hostel', icon: Home },
+      { title: 'Rooms', href: '/hostel/rooms', icon: Bed },
+      { title: 'Students', href: '/hostel/students', icon: Users },
     ],
   },
   {
@@ -121,13 +142,23 @@ const menuItems: MenuItem[] = [
     badge: 3,
   },
   {
+    title: 'Security',
+    href: '/security',
+    icon: Shield,
+    submenu: [
+      { title: 'Audit Logs', href: '/security', icon: FileText },
+      { title: 'Permissions', href: '/security/permissions', icon: Shield },
+      { title: 'Settings', href: '/security/settings', icon: Settings },
+    ],
+  },
+  {
     title: 'Administration',
     href: '/admin',
-    icon: Shield,
+    icon: Settings,
     submenu: [
       { title: 'Users', href: '/admin/users', icon: Users },
       { title: 'Settings', href: '/admin/settings', icon: Settings },
-      { title: 'Audit Logs', href: '/admin/audit', icon: FileText },
+      { title: 'System', href: '/admin/system', icon: Settings },
     ],
   },
 ]
